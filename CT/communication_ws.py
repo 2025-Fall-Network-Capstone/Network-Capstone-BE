@@ -1,57 +1,63 @@
 # communication_ws.py
 import socketio
-import threading
-from logger import log
-import config
+import time
+from config import EV, AV1, AV2
 
-class WSCommunicator:
-    """CT가 EV/AV1/AV2 서버에 WebSocket(Client)으로 접속하는 모듈"""
-
+class CommunicationWS:
     def __init__(self):
-        self.targets = {
-            "EV": f"http://{config.EV}",
-            "AV1": f"http://{config.AV1}",
-            "AV2": f"http://{config.AV2}",
-        }
-        self.clients = {}
+        # CT 서버 상태 자체는 state.py에서 관리
+        self.control_client = socketio.Client(reconnection=True, reconnection_attempts=0)
+        self.ev_client = socketio.Client(reconnection=True, reconnection_attempts=0)
+        self.av1_client = socketio.Client(reconnection=True, reconnection_attempts=0)
+        self.av2_client = socketio.Client(reconnection=True, reconnection_attempts=0)
 
-    def connect(self, role):
-        if role in self.clients and self.clients[role].connected:
-            return
+        import threading
+        t = threading.Thread(target=self.connect_all_loop)
+        t.daemon = True
+        t.start()
 
-        sio = socketio.Client()
+        # EV / AV1 / AV2 상태 수신 이벤트 설정
+        self.ev_client.on("ev_state", self.handle_ev_state)
+        self.av1_client.on("av1_state", self.handle_vehicle_state)
+        self.av2_client.on("av2_state", self.handle_vehicle_state)
 
-        @sio.event
-        def connect():
-            log.write(f"[COMM] Connected to {role}")
+    def connect_all_loop(self):
+        """서버 연결을 시도하고 실패하면 재시도"""
+        while True:
+            self.try_connect(self.control_client, "CONTROL", "[CT] CONTROL")
+            self.try_connect(self.ev_client, EV, "[CT] EV")
+            self.try_connect(self.av1_client, AV1, "[CT] AV1")
+            self.try_connect(self.av2_client, AV2, "[CT] AV2")
+            time.sleep(5)  # 5초마다 재시도
 
-        @sio.event
-        def disconnect():
-            log.write(f"[COMM] Disconnected from {role}")
+    def try_connect(self, client, addr, name):
+        if not client.connected:
+            try:
+                client.connect(f"http://{addr}")
+                print(f"{name} connected")
+            except Exception as e:
+                print(f"{name} connection failed: {e}")
 
+    def broadcast(self, event, data):
+        """모든 노드에 이벤트 전송"""
         try:
-            sio.connect(self.targets[role], transports=["websocket"])
-            self.clients[role] = sio
+            if self.control_client.connected:
+                self.control_client.emit(event, data)
+            if self.ev_client.connected:
+                self.ev_client.emit(event, data)
+            if self.av1_client.connected:
+                self.av1_client.emit(event, data)
+            if self.av2_client.connected:
+                self.av2_client.emit(event, data)
         except Exception as e:
-            log.write(f"[COMM] Connection failed to {role}: {e}")
+            print(f"[CT] broadcast error: {e}")
 
-    def connect_all(self):
-        for role in self.targets:
-            threading.Thread(target=self.connect, args=(role,), daemon=True).start()
+    def handle_ev_state(self, data):
+        print("[CT] Received EV state:", data)
 
-    def emit(self, role, event, data=None):
-        data = data or {}
-        if role not in self.clients or not self.clients[role].connected:
-            self.connect(role)
+    def handle_vehicle_state(self, data):
+        vid = data.get("id", "UNKNOWN")
+        print(f"[CT] Received {vid} state:", data)
 
-        try:
-            self.clients[role].emit(event, data)
-            log.write(f"[COMM] → {role} event={event} data={data}")
-        except Exception as e:
-            log.write(f"[COMM ERROR] Emit failed to {role}: {e}")
-
-    def broadcast(self, event, data=None):
-        for r in self.targets:
-            self.emit(r, event, data)
-
-comm = WSCommunicator()
+# CT 전역에서 사용할 객체
+comm = CommunicationWS()

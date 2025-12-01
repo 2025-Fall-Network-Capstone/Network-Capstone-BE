@@ -21,9 +21,6 @@ app.register_blueprint(receive_bp)
 app.register_blueprint(control_bp)
 app.register_blueprint(status_bp)
 
-# --- 다른 노트북 서버(EV/AV1/AV2)에 연결 ---
-comm.connect_all()
-
 # =========================
 # 프론트에서 "시작" 버튼 클릭 시
 # =========================
