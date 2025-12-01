@@ -11,7 +11,10 @@ class CommunicationWS:
         self.av1_client = socketio.Client(reconnection=True, reconnection_attempts=0)
         self.av2_client = socketio.Client(reconnection=True, reconnection_attempts=0)
 
-        self.connect_all_loop()
+        import threading
+        t = threading.Thread(target=self.connect_all_loop)
+        t.daemon = True
+        t.start()
 
     def connect_all_loop(self):
         """서버 연결을 시도하고 실패하면 재시도"""

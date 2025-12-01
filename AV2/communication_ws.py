@@ -15,6 +15,9 @@ class CommunicationWS:
         t.daemon = True
         t.start()
 
+        # EV 이벤트 수신
+        self.ev_client.on("ev_state", self.handle_ev_state)
+
     def connect_all_loop(self):
         while True:
             self.try_connect(self.control_client, CONTROL, "[AV2] CONTROL")
@@ -41,3 +44,7 @@ class CommunicationWS:
                 self.av1_client.emit("av2_state", data)
         except Exception as e:
             print(f"[AV2] send_state error: {e}")
+
+    def handle_ev_state(self, data):
+        # EV 상태 수신
+        print("[AV2] Received EV state:", data)
