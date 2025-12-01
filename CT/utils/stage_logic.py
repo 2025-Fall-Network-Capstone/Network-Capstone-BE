@@ -4,36 +4,28 @@ from state_manager import state
 from communication_ws import comm
 
 def change_stage(stage):
-    log.write(f"[STAGE] change_stage → {stage}")
-    if stage == 1:
-        stage1_behavior()
-    elif stage == 2:
-        stage2_behavior()
-    elif stage == 3:
-        stage3_behavior()
-    elif stage == 4:
-        stage4_behavior()
+    log.write(f"[STAGE] → {stage}")
+    state.update_global_stage(stage)
 
-def stage1_behavior():
+    if stage == 1: stage1()
+    elif stage == 2: stage2()
+    elif stage == 3: stage3()
+    elif stage == 4: stage4()
+
+def stage1():
     log.write("[STAGE1] 시작")
-    comm.send_to("EV", "control_msg", {"msg": "EV approaching", "stage":1})
-    comm.send_to("AV1", "control_msg", {"msg": "AV reporting status", "stage":1})
-    comm.send_to("AV2", "control_msg", {"msg": "AV reporting status", "stage":1})
+    comm.broadcast("control_msg", {"stage": 1, "msg": "stage_1_start"})
 
-def stage2_behavior():
+def stage2():
     log.write("[STAGE2] 시작")
-    comm.send_to("AV2", "control_msg", {"from":"AV1","msg":"좌회전 경로 변경"})
-    comm.send_to("AV1", "control_msg", {"from":"EV","msg":"EV 방향 직진"})
+    comm.emit("AV2", "control_msg", {"from": "AV1", "msg": "좌회전 변경", "stage": 2})
+    comm.emit("AV1", "control_msg", {"from": "EV", "msg": "EV 직진", "stage": 2})
 
-def stage3_behavior():
+def stage3():
     log.write("[STAGE3] 시작")
     ev_state = state.get_vehicle("EV")
-    comm.send_to("AV1", "control_msg", {"msg":"EV 현재 상태","ev_state":ev_state})
-    comm.send_to("AV2", "control_msg", {"msg":"EV 현재 상태","ev_state":ev_state})
-    comm.send_to("AV1", "control_msg", {"msg":"EV 반경 벗어남"})
-    comm.send_to("AV2", "control_msg", {"msg":"EV 반경 벗어남"})
+    comm.broadcast("control_msg", {"msg": "EV 상태", "ev": ev_state, "stage": 3})
 
-def stage4_behavior():
-    log.write("[STAGE4] 정상 주행 모드")
-    for role in ["EV","AV1","AV2"]:
-        comm.send_to(role,"control_msg",{"msg":"정상 주행 상태"})
+def stage4():
+    log.write("[STAGE4] 정상 주행")
+    comm.broadcast("control_msg", {"msg": "정상 주행 상태", "stage": 4})

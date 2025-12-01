@@ -1,79 +1,57 @@
 # communication_ws.py
-from flask_socketio import SocketIO, emit
+import socketio
+import threading
 from logger import log
-from state_manager import state
+import config
 
-class CommunicationWS:
-    def __init__(self, socketio: SocketIO):
-        self.socketio = socketio
-        self.role_map = {}  # role -> sid
-        self.sid_map = {}   # sid -> role
-        self._register_handlers()
+class WSCommunicator:
+    """CT가 EV/AV1/AV2 서버에 WebSocket(Client)으로 접속하는 모듈"""
 
-    def _register_handlers(self):
-        sio = self.socketio
-        from flask import request
+    def __init__(self):
+        self.targets = {
+            "EV": f"http://{config.EV}",
+            "AV1": f"http://{config.AV1}",
+            "AV2": f"http://{config.AV2}",
+        }
+        self.clients = {}
 
-        @sio.on("connect")
-        def _on_connect():
-            print(f"[CONTROL] Client connected")
+    def connect(self, role):
+        if role in self.clients and self.clients[role].connected:
+            return
 
-        @sio.on("disconnect")
-        def _on_disconnect():
-            sid = request.sid
-            role = self.sid_map.pop(sid, None)
-            if role:
-                self.role_map.pop(role, None)
-                log.write(f"[WS] {role} disconnected (sid={sid})")
-            else:
-                log.write(f"[WS] unknown client disconnected (sid={sid})")
+        sio = socketio.Client()
 
-        @sio.on("register")
-        def _on_register(data):
-            sid = request.sid
-            role = data.get("role")
-            if not role:
-                emit("error", {"msg": "no role provided"})
-                return
-            prev = self.role_map.get(role)
-            if prev:
-                self.sid_map.pop(prev, None)
-            self.role_map[role] = sid
-            self.sid_map[sid] = role
-            log.write(f"[WS] Registered {role} (sid={sid})")
-            emit("stage_update", {"stage": state.get_global_stage()})
+        @sio.event
+        def connect():
+            log.write(f"[COMM] Connected to {role}")
 
-        @sio.on("ev_state")
-        def _on_ev_state(data):
-            sid = request.sid
-            role = self.sid_map.get(sid) or data.get("id") or data.get("from")
-            if not role:
-                log.write(f"[WS] ev_state received but no role found: {data}")
-                return
-            state.update_vehicle(role, data)
-            log.write(f"[WS] state updated from {role}: {data}")
-            sio.emit("vehicle_update", {"id": role, "state": state.get_vehicle(role)})
+        @sio.event
+        def disconnect():
+            log.write(f"[COMM] Disconnected from {role}")
 
-        @sio.on("request_status")
-        def _on_request_status(_):
-            emit("status_all", state.get_all())
-
-    def broadcast_stage(self, stage):
-        state.update_global_stage(stage)
-        self.socketio.emit("stage_update", {"stage": stage})
-        log.write(f"[WS] broadcast stage_update -> {stage}")
-
-    def send_to(self, role, event, data):
-        sid = self.role_map.get(role)
-        if not sid:
-            log.write(f"[WS] send_to failed: {role} not connected")
-            return False
         try:
-            self.socketio.emit(event, data, to=sid)
-            return True
+            sio.connect(self.targets[role], transports=["websocket"])
+            self.clients[role] = sio
         except Exception as e:
-            log.write(f"[WS] send_to exception: {e}")
-            return False
+            log.write(f"[COMM] Connection failed to {role}: {e}")
 
-# 싱글톤 사용 가능
-comm = None  # app.py에서 CommunicationWS(socketio)로 초기화
+    def connect_all(self):
+        for role in self.targets:
+            threading.Thread(target=self.connect, args=(role,), daemon=True).start()
+
+    def emit(self, role, event, data=None):
+        data = data or {}
+        if role not in self.clients or not self.clients[role].connected:
+            self.connect(role)
+
+        try:
+            self.clients[role].emit(event, data)
+            log.write(f"[COMM] → {role} event={event} data={data}")
+        except Exception as e:
+            log.write(f"[COMM ERROR] Emit failed to {role}: {e}")
+
+    def broadcast(self, event, data=None):
+        for r in self.targets:
+            self.emit(r, event, data)
+
+comm = WSCommunicator()

@@ -1,14 +1,17 @@
 # routes/receive.py
 from flask import Blueprint, request, jsonify
-from logger import log
 from state_manager import state
-from utils.stage_logic import handle_message
+from logger import log
 
 receive_bp = Blueprint("receive", __name__)
 
-@receive_bp.post("/receive")
+@receive_bp.post("/data")
 def receive_data():
     data = request.json
     log.write(f"[RECEIVE] {data}")
-    handle_message(data)
+
+    vid = data.get("id")
+    if vid:
+        state.update_vehicle(vid, data)
+
     return jsonify({"ok": True})
