@@ -11,14 +11,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # EV가 CONTROL, AV1, AV2에 연결
 comm = CommunicationWS(state)
 
-# ------------------------
-# 서버 역할: AV1/AV2 요청 수신
-# ------------------------
-@socketio.on("request_ev_state")
-def handle_request_ev_state(data):
-    # AV1/AV2가 EV 상태 요청 시 상태 응답
-    socketio.emit("ev_state", state.get())
-    print(f"[EV SERVER] Sent state to {data.get('from')}")
 
 # 관제에서 stage 수신
 @socketio.on('stage_update')
@@ -27,6 +19,17 @@ def handle_stage_update(data):
     if stage is not None:
         state.update_stage(stage)
         print(f"[EV] Stage updated to {stage}")
+
+
+# AV1 -> EV
+@socketio.on("av1_state")
+def handle_av1_state(data):
+    print("[EV SERVER] Received AV1 state:", data)
+
+# AV2 -> EV
+@socketio.on("av2_state")
+def handle_av2_state(data):
+    print("[EV SERVER] Received AV2 state:", data)
 
 # EV state 주기적 전송
 def send_state_loop():
