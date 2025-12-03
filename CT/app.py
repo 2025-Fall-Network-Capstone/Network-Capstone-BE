@@ -57,5 +57,5 @@ def handle_vehicle_state(data):
     socketio.emit("vehicle_update", {"id": vid, "state": state.get_vehicle(vid)})
 
 if __name__ == "__main__":
-    print(f"🚀 CT Server running on {HOST}:{PORT}")
+    print(f"CT Server running on {HOST}:{PORT}")
     socketio.run(app, host=HOST, port=PORT)
