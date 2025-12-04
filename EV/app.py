@@ -35,6 +35,9 @@ def handle_av2_state(data):
 def send_state_loop():
     while True:
         comm.send_state()
+
+        socketio.emit("ev_state", state.get())
+
         time.sleep(1)
 
 if __name__ == "__main__":
