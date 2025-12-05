@@ -38,4 +38,4 @@ if __name__ == "__main__":
     t = threading.Thread(target=send_state_loop)
     t.daemon = True
     t.start()
-    socketio.run(app, host="192.168.0.118", port=5001)
+    socketio.run(app, host="172.20.57.184", port=5001)
