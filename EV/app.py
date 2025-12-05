@@ -93,4 +93,4 @@ if __name__ == "__main__":
     t.daemon = True
     t.start()
 
-    socketio.run(app, host="192.168.0.34", port=5000)
+    socketio.run(app, host="172.20.62.16", port=5000)
