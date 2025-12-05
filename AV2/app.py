@@ -35,7 +35,7 @@ def handle_stage_update(data):
 def send_state_loop():
     while True:
         comm.send_state()
-        socketio.emit("av2_state", state.get(), broadcast=True)
+        socketio.emit("av2_state", state.get())
         time.sleep(1)
 
 
