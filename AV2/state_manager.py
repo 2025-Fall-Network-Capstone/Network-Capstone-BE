@@ -1,6 +1,9 @@
+import threading 
+
 class StateManager:
     def __init__(self, role="AV2"):
         self.role = role
+        self.lock = threading.Lock()
         self.data = {
             "id": "AV2",
             "speed": 45,
@@ -11,8 +14,9 @@ class StateManager:
         }
 
     def update_stage(self, stage):
-        self.data["stage"] = stage
-        self.apply_stage_rules(stage)
+        with self.lock:
+            self.data["stage"] = stage
+            self.apply_stage_rules(stage)
 
     def apply_stage_rules(self, stage):
         if stage == 0:
@@ -33,6 +37,7 @@ class StateManager:
             self.data["speed"] = 45
 
     def get(self):
-        return self.data
+        with self.lock:
+            return self.data
 
 state = StateManager()
