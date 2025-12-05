@@ -1,6 +1,6 @@
 # config.py
 ROLE = "CONTROL"
-HOST = "192.168.0.92"
+HOST = "192.168.0.119"
 PORT = 5003
 
 EV = "192.168.0.58:5000"
