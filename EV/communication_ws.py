@@ -7,30 +7,31 @@ class CommunicationWS:
     def __init__(self, state):
         self.state = state
 
-        self.control_client = socketio.Client(reconnection=True, reconnection_attempts=0)
-        self.av1_client = socketio.Client(reconnection=True, reconnection_attempts=0)
-        self.av2_client = socketio.Client(reconnection=True, reconnection_attempts=0)
+        self.control_client = socketio.Client(reconnection=False)
+        self.av1_client = socketio.Client(reconnection=False)
+        self.av2_client = socketio.Client(reconnection=False)
 
         import threading
-        t = threading.Thread(target=self.connect_all_loop)
+        t = threading.Thread(target=self.reconnect_loop)
         t.daemon = True
         t.start()
 
-    def connect_all_loop(self):
-        """서버 연결을 시도하고 실패하면 재시도"""
+    def reconnect_loop(self):
+        """연결 안된 경우에만 connect() 시도"""
         while True:
-            self.try_connect(self.control_client, CONTROL, "[EV] CONTROL")
-            self.try_connect(self.av1_client, AV1, "[EV] AV1")
-            self.try_connect(self.av2_client, AV2, "[EV] AV2")
-            time.sleep(5)  # 5초마다 재시도
+            self.safe_connect(self.control_client, CONTROL, "[EV] CONTROL")
+            self.safe_connect(self.av1_client, AV1, "[EV] AV1")
+            self.safe_connect(self.av2_client, AV2, "[EV] AV2")
+            time.sleep(3)
 
-    def try_connect(self, client, addr, name):
+    def safe_connect(self, client, addr, name):
+        """연결 안된 경우에만 connect 실행"""
         if not client.connected:
             try:
                 client.connect(f"http://{addr}")
                 print(f"{name} connected")
             except Exception as e:
-                print(f"{name} connection failed: {e}")
+                print(f"{name} connect failed: {e}")
 
     def send_state(self):
         data = self.state.get()
