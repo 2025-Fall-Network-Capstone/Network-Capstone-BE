@@ -30,7 +30,7 @@ class StateManager:
         self.data["speed"] = 0
         self.data["lane_change"] = False
         self.data["direction"] = "STRAIGHT"
-        self.data["position"] = [0, 0]
+        self.data["position"] = [6, 6]
         self.data["emergency"] = False
 
         if stage == 0:

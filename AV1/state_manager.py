@@ -8,7 +8,7 @@ class StateManager:
             "id": "AV1",
             "speed": 45,
             "lane_change": False,
-            "position": [0, 0],
+            "position": [5, 3],
             "direction": "straight",
             "stage": 0
         }
