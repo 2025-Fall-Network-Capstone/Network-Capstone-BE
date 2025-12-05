@@ -16,6 +16,10 @@ class CommunicationWS:
         t.daemon = True
         t.start()
 
+
+        self.control_client.on("stage_update", self.handle_stage_update)
+
+
         # EV 이벤트 수신 설정
         self.ev_client.on("ev_state", self.handle_ev_state)
 
