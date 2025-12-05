@@ -9,23 +9,27 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 comm = CommunicationWS(state)
 
+
 # EV에서 state 수신
 @socketio.on("ev_state")
 def handle_ev_state(data):
     print("[AV2] Received EV state:", data)
+
 
 # AV1에서 state 수신
 @socketio.on("av1_state")
 def handle_av1_state(data):
     print("[AV2] Received AV1 state:", data)
 
-# CONTROL에서 stage + EV 정보 수신
+
+# CONTROL에서 stage 업데이트 수신
 @socketio.on("stage_update")
 def handle_stage_update(data):
     stage = data.get("stage")
     if stage is not None:
         state.update_stage(stage)
         print(f"[AV2] Stage updated to {stage}")
+
 
 # AV2 state 주기적 전송
 def send_state_loop():
@@ -34,8 +38,9 @@ def send_state_loop():
         socketio.emit("av2_state", state.get())
         time.sleep(1)
 
+
 if __name__ == "__main__":
     t = threading.Thread(target=send_state_loop)
     t.daemon = True
     t.start()
-    socketio.run(app, host="0.0.0.0", port=5002)
+    socketio.run(app, host="172.20.93.219", port=5002)
