@@ -8,7 +8,7 @@ class StateManager:
             "id": role,
             "speed": 0,
             "lane_change": False,
-            "position": [0, 0],
+            "position": [6, 6],
             "direction": "STRAIGHT",
             "emergency": False,
             "stage": 0
