@@ -10,18 +10,18 @@ class CommunicationWS:
         self.ev_client = socketio.Client(reconnection=True, reconnection_attempts=0)
         self.av2_client = socketio.Client(reconnection=True, reconnection_attempts=0)
 
+
+        # EV 이벤트 수신 설정
+        self.ev_client.on("ev_state", self.handle_ev_state)
+
+        self.control_client.on("stage_update", self.handle_stage_update)
+
         # 서버 연결 시도 스레드 시작
         import threading
         t = threading.Thread(target=self.connect_all_loop)
         t.daemon = True
         t.start()
 
-
-        self.control_client.on("stage_update", self.handle_stage_update)
-
-
-        # EV 이벤트 수신 설정
-        self.ev_client.on("ev_state", self.handle_ev_state)
 
     def connect_all_loop(self):
         while True:
@@ -53,3 +53,9 @@ class CommunicationWS:
     def handle_ev_state(self, data):
         # EV 상태 수신
         print("[AV1] Received EV state:", data)
+
+    def handle_stage_update(self, data):
+        stage = data.get("stage")
+        print("[AV1 WS] Stage from CONTROL:", stage)
+        if stage is not None:
+            self.state.update_stage(stage)
