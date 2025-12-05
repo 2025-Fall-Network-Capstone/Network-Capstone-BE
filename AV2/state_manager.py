@@ -3,10 +3,10 @@ class StateManager:
         self.role = role
         self.data = {
             "id": "AV2",
-            "speed": 35,
+            "speed": 45,
             "lane_change": False,
             "position": [0, 0],
-            "direction": "left_turn",
+            "direction": "straight",
             "stage": 0
         }
 
@@ -16,19 +16,21 @@ class StateManager:
 
     def apply_stage_rules(self, stage):
         if stage == 0:
-            self.data["speed"] = 35
-            self.data["lane_change"] = False
-            self.data["direction"] = "left_turn"
+            self.data["speed"] = 45
+            self.data["direction"] = "straight"
         elif stage == 1:
-            self.data["speed"] = 40
+            self.data["position"] = [4, 6]
+            self.data["speed"] = 45
             self.data["direction"] = "straight"
         elif stage == 2:
-            self.data["lane_change"] = True
-            self.data["direction"] = "right_turn"
+            self.data["position"] = [2, 5]
+            self.data["speed"] = 35
         elif stage == 3:
-            self.data["speed"] = 20
+            self.data["position"] = [2, 3]
+            self.data["speed"] = 40
         elif stage == 4:
-            self.data["speed"] = 0
+            self.data["position"] = [2, 3]
+            self.data["speed"] = 45
 
     def get(self):
         return self.data

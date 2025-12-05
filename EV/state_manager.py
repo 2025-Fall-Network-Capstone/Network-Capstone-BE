@@ -17,19 +17,29 @@ class StateManager:
 
     def apply_stage_rules(self, stage):
         if stage == 0:
-            self.data["speed"] = 0
+            self.data["speed"] = 80
             self.data["lane_change"] = False
             self.data["direction"] = "STRAIGHT"
         elif stage == 1:
-            self.data["speed"] = 10
+            self.data["position"] = [6,6]
+            self.data["speed"] = 80
             self.data["direction"] = "STRAIGHT"
+            self.data["emergency"] = True
         elif stage == 2:
-            self.data["lane_change"] = True
-            self.data["direction"] = "LEFT"
+            self.data["position"] = [4,6]
+            self.data["speed"] = 80
+            self.data["direction"] = "STRAIGHT"
+            self.data["emergency"] = True
         elif stage == 3:
-            self.data["speed"] = 3
+            self.data["position"] = [3,6]
+            self.data["speed"] = 80
+            self.data["direction"] = "STRAIGHT"
+            self.data["emergency"] = True
         elif stage == 4:
-            self.data["speed"] = 0
+            self.data["position"] = [0,6]
+            self.data["speed"] = 80
+            self.data["direction"] = "STRAIGHT"
+            self.data["emergency"] = True
 
     def get(self):
         return self.data
